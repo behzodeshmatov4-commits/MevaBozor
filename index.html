@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MevaBozor - Dunyo Mevalari</title>
+  <title>MevaBozor - Boshqaruv Paneli bilan</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,64 +13,37 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     function App() {
+      // Xotirada saqlangan mahsulotlar yoki boshlang'ich mevalar
+      const [products, setProducts] = useState(() => {
+        const saved = localStorage.getItem('meva_bozor_products');
+        if (saved) {
+          try { return JSON.parse(saved); } catch(e) {}
+        }
+        return [
+          { id: 1, name: "Qizil Olma (Fuji)", price: 18000, unit: "kg", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
+          { id: 2, name: "Shirin Banan", price: 24000, unit: "kg", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400" },
+          { id: 3, name: "Qora Kishmish Uzum", price: 35000, unit: "kg", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
+          { id: 4, name: "Qirollik Mango", price: 65000, unit: "kg", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400" }
+        ];
+      });
+
       const [cart, setCart] = useState([]);
       const [adminView, setAdminView] = useState(false);
       const [deliveryFee, setDeliveryFee] = useState(15000);
-      
-      const [products, setProducts] = useState([
-        // OLMALAR (15 xil)
-        { id: 1, name: "Qizil Olma (Fuji)", price: 18000, unit: "kg", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
-        { id: 2, name: "Qizil Olma (Gala)", price: 17000, unit: "kg", image: "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400" },
-        { id: 3, name: "Qizil Olma (Starkrimson)", price: 19000, unit: "kg", image: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400" },
-        { id: 4, name: "Qizil Olma (Granny Qizil)", price: 20000, unit: "kg", image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=400" },
-        { id: 5, name: "Semerenko Olmasi (Yashil)", price: 16000, unit: "kg", image: "https://images.unsplash.com/photo-1576179646964-2e6c57f92f59?w=400" },
-        { id: 6, name: "Golden Delicious (Sariq)", price: 18000, unit: "kg", image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=400" },
-        { id: 7, name: "Baxtiyor olmasi", price: 14000, unit: "kg", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
-        { id: 8, name: "Qandil Sinap", price: 22000, unit: "kg", image: "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400" },
-        { id: 9, name: "Rosa olmasi", price: 21000, unit: "kg", image: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400" },
-        { id: 10, name: "Pechin olmasi", price: 15000, unit: "kg", image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=400" },
-        { id: 11, name: "Beshqarsaman olmasi", price: 23000, unit: "kg", image: "https://images.unsplash.com/photo-1576179646964-2e6c57f92f59?w=400" },
-        { id: 12, name: "Airis red olmasi", price: 25000, unit: "kg", image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=400" },
-        { id: 13, name: "Pink Lady olmasi", price: 28000, unit: "kg", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
-        { id: 14, name: "Braeburn olmasi", price: 24000, unit: "kg", image: "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400" },
-        { id: 15, name: "Fuji Premium", price: 30000, unit: "kg", image: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400" },
 
-        // UZUMLAR (5 xil)
-        { id: 16, name: "Qora Kishmish Uzum", price: 35000, unit: "kg", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
-        { id: 17, name: "Husayni Uzum (Kelin barmoq)", price: 30000, unit: "kg", image: "https://images.unsplash.com/photo-1596363505789-4e613c224ef3?w=400" },
-        { id: 18, name: "Toifi Uzumi", price: 28000, unit: "kg", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
-        { id: 19, name: "Raysat qora uzum", price: 32000, unit: "kg", image: "https://images.unsplash.com/photo-1596363505789-4e613c224ef3?w=400" },
-        { id: 20, name: "Nimrang oq uzum", price: 27000, unit: "kg", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
+      // Yangi meva qo'shish uchunformalar holati
+      const [newName, setNewName] = useState("");
+      const [newPrice, setNewPrice] = useState("");
+      const [newUnit, setNewUnit] = useState("kg");
+      const [newImage, setNewImage] = useState("");
 
-        // BANANLAR (3 xil)
-        { id: 21, name: "Shirin Banan (Ekvador)", price: 24000, unit: "kg", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400" },
-        { id: 22, name: "Mini Banan", price: 38000, unit: "kg", image: "https://images.unsplash.com/photo-1528825871115-3581a5387919?w=400" },
-        { id: 23, name: "Qizil Banan", price: 45000, unit: "kg", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400" },
-
-        // MAHALLIY VA BOSHQA MEVALAR
-        { id: 24, name: "Saraton Nok", price: 26000, unit: "kg", image: "https://images.unsplash.com/photo-1514756313117-ee9992d71c17?w=400" },
-        { id: 25, name: "Limoniy Behi", price: 22000, unit: "kg", image: "https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400" },
-        { id: 26, name: "Sariq Shaftoli", price: 30000, unit: "kg", image: "https://images.unsplash.com/photo-1595124134710-1117c277f804?w=400" },
-        { id: 27, name: "Yangi Qulupnay", price: 45000, unit: "kg", image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400" },
-        { id: 28, name: "Shirin Tarvuz", price: 8000, unit: "dona", image: "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=400" },
-        { id: 29, name: "Asal Qovun", price: 15000, unit: "dona", image: "https://images.unsplash.com/photo-1526318896980-cf7bcea98844?w=400" },
-        { id: 30, name: "Apelsin", price: 32000, unit: "kg", image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=400" },
-
-        // DUNYO / EKSOTIK MEVALARI
-        { id: 31, name: "Qirollik Mango (Tailand)", price: 65000, unit: "kg", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400" },
-        { id: 32, name: "Avakado Hass", price: 70000, unit: "kg", image: "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400" },
-        { id: 33, name: "Ananas (Tropik)", price: 40000, unit: "dona", image: "https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400" },
-        { id: 34, name: "Kivi (Yangi Zelandiya)", price: 45000, unit: "kg", image: "https://images.unsplash.com/photo-1585059896245-a262458ae2c7?w=400" },
-        { id: 35, name: "Dragon Fruit (Pitaxaya)", price: 90000, unit: "dona", image: "https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=400" },
-        { id: 36, name: "Marakuya (Passion Fruit)", price: 110000, unit: "kg", image: "https://images.unsplash.com/photo-1543168259-24e5e7d363f5?w=400" },
-        { id: 37, name: "Papayya", price: 85000, unit: "dona", image: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=400" },
-        { id: 38, name: "Kokos Yong'og'i", price: 35000, unit: "dona", image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=400" },
-        { id: 39, name: "Granat (Anor - Premium)", price: 30000, unit: "kg", image: "https://images.unsplash.com/photo-1541459639661-8ff629c15859?w=400" },
-        { id: 40, name: "Greypsfut", price: 36000, unit: "kg", image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400" }
-      ]);
+      // Mahsulotlar o'zgarganda xotiraga saqlash
+      useEffect(() => {
+        localStorage.setItem('meva_bozor_products', JSON.stringify(products));
+      }, [products]);
 
       const addToCart = (product) => {
         setCart([...cart, product]);
@@ -78,21 +51,118 @@
 
       const totalPrice = cart.reduce((sum, item) => sum + item.price, 0);
 
+      // Yangi meva qo'shish funksiyasi
+      const handleAddProduct = (e) => {
+        e.preventDefault();
+        if (!newName || !newPrice) {
+          alert("Iltimos, meva nomi va narxini kiriting!");
+          return;
+        }
+
+        const defaultImages = [
+          "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400",
+          "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400",
+          "https://images.unsplash.com/photo-1595124134710-1117c277f804?w=400"
+        ];
+        const randomImg = defaultImages[Math.floor(Math.random() * defaultImages.length)];
+
+        const newProd = {
+          id: Date.now(),
+          name: newName,
+          price: Number(newPrice),
+          unit: newUnit,
+          image: newImage.trim() !== "" ? newImage : randomImg
+        };
+
+        setProducts([newProd, ...products]);
+        setNewName("");
+        setNewPrice("");
+        setNewImage("");
+        alert("Yangi meva muvaffaqiyatli qo'shildi!");
+      };
+
+      // Mevani o'chirish
+      const handleDeleteProduct = (id) => {
+        if (confirm("Haqiqatan ham bu mevani o'chirmoqchimisiz?")) {
+          setProducts(products.filter(p => p.id !== id));
+        }
+      };
+
       return (
         <div className="min-h-screen pb-24">
           <header className="bg-emerald-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
-            <h1 className="text-xl font-bold flex items-center gap-2">🌍 Dunyo Mevalari</h1>
-            <button onClick={() => setAdminView(!adminView)} className="bg-emerald-700 text-xs px-3 py-1.5 rounded-lg border border-emerald-500">
-              {adminView ? "🛒 Do'kon" : "⚙️ Sotuvchi paneli"}
+            <h1 className="text-xl font-bold flex items-center gap-2">🍎 MevaBozor</h1>
+            <button 
+              onClick={() => setAdminView(!adminView)} 
+              className="bg-emerald-700 text-xs px-3 py-2 rounded-lg border border-emerald-500 font-semibold"
+            >
+              {adminView ? "🛒 Do'konga qaytish" : "⚙️ Sotuvchi paneli"}
             </button>
           </header>
 
           <main className="max-w-md mx-auto p-4">
             {adminView ? (
-              <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
-                <h2 className="text-lg font-bold mb-4 text-emerald-800">⚙️ Sotuvchi Paneli</h2>
-                <div className="mb-4">
-                  <label className="block text-sm text-gray-600 mb-1">Yetkazib berish narxi (so'm):</label>
+              <div className="space-y-6">
+                {/* Yangi meva qo'shish formasi */}
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
+                  <h2 className="text-base font-bold mb-3 text-emerald-800">➕ Yangi Meva Qo'shish</h2>
+                  <form onSubmit={handleAddProduct} className="space-y-3 text-sm">
+                    <div>
+                      <label className="block text-gray-600 text-xs mb-1">Meva nomi:</label>
+                      <input 
+                        type="text" 
+                        placeholder="Masalan: Qulupnay" 
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className="w-full border p-2 rounded-lg"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="block text-gray-600 text-xs mb-1">Narxi (so'm):</label>
+                        <input 
+                          type="number" 
+                          placeholder="25000" 
+                          value={newPrice}
+                          onChange={(e) => setNewPrice(e.target.value)}
+                          className="w-full border p-2 rounded-lg"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <label className="block text-gray-600 text-xs mb-1">Birlik:</label>
+                        <select 
+                          value={newUnit} 
+                          onChange={(e) => setNewUnit(e.target.value)}
+                          className="w-full border p-2 rounded-lg bg-white"
+                        >
+                          <option value="kg">kg</option>
+                          <option value="dona">dona</option>
+                          <option value="bog'">bog'</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-gray-600 text-xs mb-1">Rasm havolasi (URL - ixtiyoriy):</label>
+                      <input 
+                        type="text" 
+                        placeholder="https://... (bo'sh qoldirsangiz, avtomat rasm qo'yiladi)" 
+                        value={newImage}
+                        onChange={(e) => setNewImage(e.target.value)}
+                        className="w-full border p-2 rounded-lg text-xs"
+                      />
+                    </div>
+                    <button 
+                      type="submit" 
+                      className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-emerald-700 transition"
+                    >
+                      Mevani Qo'shish
+                    </button>
+                  </form>
+                </div>
+
+                {/* Yetkazib berish narxini sozlash */}
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
+                  <h2 className="text-base font-bold mb-3 text-emerald-800">🚚 Yetkazib berish narxi</h2>
                   <input 
                     type="number" 
                     value={deliveryFee} 
@@ -100,25 +170,32 @@
                     className="w-full border p-2 rounded-lg text-sm"
                   />
                 </div>
-                <h3 className="font-semibold text-sm mb-2">Barcha mevalar narxini o'zgartirish:</h3>
-                {products.map(p => (
-                  <div key={p.id} className="flex justify-between items-center py-2 border-b text-sm">
-                    <span className="truncate w-40">{p.name}</span>
-                    <input 
-                      type="number" 
-                      value={p.price} 
-                      onChange={(e) => {
-                        const newPrice = Number(e.target.value);
-                        setProducts(products.map(item => item.id === p.id ? {...item, price: newPrice} : item));
-                      }}
-                      className="w-24 border p-1 rounded text-right"
-                    />
+
+                {/* Mavjud mevalarni boshqarish va o'chirish */}
+                <div className="bg-white p-4 rounded-xl shadow border border-gray-100">
+                  <h2 className="text-base font-bold mb-3 text-emerald-800">📋 Mavjud mevalar ({products.length} ta)</h2>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {products.map(p => (
+                      <div key={p.id} className="flex justify-between items-center py-2 border-b text-sm gap-2">
+                        <img src={p.image} alt={p.name} className="w-10 h-10 object-cover rounded-lg" />
+                        <div className="flex-1 truncate">
+                          <p className="font-semibold text-xs truncate">{p.name}</p>
+                          <p className="text-emerald-600 text-xs">{p.price.toLocaleString()} so'm</p>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="bg-red-50 text-red-600 px-2 py-1 rounded text-xs font-bold border border-red-200"
+                        >
+                          O'chirish
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             ) : (
               <div>
-                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl mb-4 text-xs text-emerald-800 flex justify-between">
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl mb-4 text-xs text-emerald-800 flex justify-between items-center">
                   <span>🚚 Yetkazib berish xizmati:</span>
                   <span className="font-bold">{deliveryFee.toLocaleString()} so'm</span>
                 </div>
@@ -126,7 +203,7 @@
                 <div className="grid grid-cols-2 gap-3">
                   {products.map(p => (
                     <div key={p.id} className="bg-white rounded-xl shadow-sm border p-3 flex flex-col justify-between">
-                      <img src={p.image} alt={p.name} className="w-full h-24 object-cover rounded-lg mb-2" />
+                      <img src={p.image} alt={p.name} className="w-full h-28 object-cover rounded-lg mb-2" />
                       <div>
                         <h3 className="font-bold text-xs text-gray-800 h-8 overflow-hidden">{p.name}</h3>
                         <p className="text-emerald-600 font-extrabold text-xs mt-1">{p.price.toLocaleString()} so'm /{p.unit}</p>
@@ -150,7 +227,10 @@
                 <p className="text-xs text-gray-500">Jami ({cart.length} ta):</p>
                 <p className="text-base font-bold text-emerald-700">{(totalPrice + deliveryFee).toLocaleString()} so'm</p>
               </div>
-              <button onClick={() => alert("Buyurtmangiz qabul qilindi! Tez orada operatorlarimiz siz bilan bog'lanishadi.")} className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs">
+              <button 
+                onClick={() => alert("Buyurtmangiz qabul qilindi! Tez orada operatorlarimiz bog'lanishadi.")} 
+                className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs"
+              >
                 Rasmiylashtirish
               </button>
             </div>
