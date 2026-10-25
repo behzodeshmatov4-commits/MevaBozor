@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MevaBozor - Premium Onlayn Do'kon</title>
+  <title>MevaBozor - Onlayn Do'kon</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,44 +13,60 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     function App() {
-      const [telegramUsername, setTelegramUsername] = useState("SizningTelegram");
+      // Sotuvchining Telegram username va telefon raqami
+      const [sellerTelegram, setSellerTelegram] = useState(() => {
+        return localStorage.getItem('meva_telegram') || "SizningTelegram";
+      });
+      const [sellerPhone, setSellerPhone] = useState("+998 90 123-45-67");
 
-      // Kengaytirilgan mahsulotlar turlari (Mevalar, Sabzavotlar, Quruq mevalar)
-      const [products] = useState([
-        { id: 1, name: "Qizil Olma (Fuji)", category: "meva", price: 18000, wholesalePrice: 15000, unit: "kg", desc: "Saralangan, shirin va sershira", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
-        { id: 2, name: "Shirin Banan", category: "meva", price: 24000, wholesalePrice: 21000, unit: "kg", desc: "Ekvador, yangi kelgan", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400" },
-        { id: 3, name: "Qora Kishmish Uzum", category: "meva", price: 35000, wholesalePrice: 30000, unit: "kg", desc: "Tabiiy shirin, urug'siz", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
-        { id: 4, name: "Qirollik Mango", category: "meva", price: 65000, wholesalePrice: 58000, unit: "kg", desc: "Eksotik, pishgan va yumshoq", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400" },
-        { id: 5, name: "Bodring (Saralangan)", category: "sabzavot", price: 12000, wholesalePrice: 10000, unit: "kg", desc: "Issiqxona, tishlab ko'radigan", image: "https://images.unsplash.com/photo-1449300079323-02e209ed9d3a?w=400" },
-        { id: 6, name: "Pomidor (Pushti)", category: "sabzavot", price: 16000, wholesalePrice: 13000, unit: "kg", desc: "Madadli, atirgul navi", image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400" },
-        { id: 7, name: "Qandak Turshak (Quruq meva)", category: "quruq", price: 50000, wholesalePrice: 45000, unit: "kg", desc: "Tabiiy quritilgan, toza", image: "https://images.unsplash.com/photo-1596591606975-97e4cef3866d?w=400" },
-        { id: 8, name: "Bodom (Magiz)", category: "quruq", price: 90000, wholesalePrice: 82000, unit: "kg", desc: "Yirik taneli, yangi", image: "https://images.unsplash.com/photo-1508061253366-f7da158b6d46?w=400" }
-      ]);
+      // Mahsulotlar (Brauzerda saqlanadi, admin paneldan qo'shsa ham o'chib ketmaydi)
+      const [products, setProducts] = useState(() => {
+        const saved = localStorage.getItem('meva_bozor_products');
+        if (saved) {
+          try { return JSON.parse(saved); } catch(e) {}
+        }
+        return [
+          { id: 1, name: "Qizil Olma (Fuji)", price: 18000, wholesalePrice: 15000, unit: "kg", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
+          { id: 2, name: "Shirin Banan", price: 24000, wholesalePrice: 21000, unit: "kg", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400" },
+          { id: 3, name: "Qora Kishmish Uzum", price: 35000, wholesalePrice: 30000, unit: "kg", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
+          { id: 4, name: "Qirollik Mango", price: 65000, wholesalePrice: 58000, unit: "kg", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400" }
+        ];
+      });
 
       const [cart, setCart] = useState([]);
+      const [adminView, setAdminView] = useState(false);
       const [isCartOpen, setIsCartOpen] = useState(false);
       const [deliveryFee] = useState(15000);
 
-      // Filtrlar va qidiruv
-      const [activeCategory, setActiveCategory] = useState("all");
-      const [searchQuery, setSearchQuery] = useState("");
-
-      // Mijoz formasi
+      // Buyurtma formasi
       const [clientName, setClientName] = useState("");
       const [clientPhone, setClientPhone] = useState("");
       const [clientAddress, setClientAddress] = useState("");
-      const [deliveryTime, setDeliveryTime] = useState("Tez orada (1-2 soatda)");
       const [paymentMethod, setPaymentMethod] = useState("Naqd pul (Kuryerga)");
 
+      // Admin panel uchun yangi mahsulot kiritish
+      const [newName, setNewName] = useState("");
+      const [newPrice, setNewPrice] = useState("");
+      const [newWholesale, setNewWholesale] = useState("");
+      const [newImage, setNewImage] = useState("");
+
+      useEffect(() => {
+        localStorage.setItem('meva_bozor_products', JSON.stringify(products));
+      }, [products]);
+
+      useEffect(() => {
+        localStorage.setItem('meva_telegram', sellerTelegram);
+      }, [sellerTelegram]);
+
       const addToCart = (product) => {
-        const exist = cart.find(item => item.id === product.id);
-        if (exist) {
-          setCart(cart.map(item => item.id === product.id ? { ...exist, qty: exist.qty + 1 } : item));
+        const existing = cart.find(item => item.id === product.id);
+        if (existing) {
+          setCart(cart.map(item => item.id === product.id ? {...item, qty: item.qty + 1} : item));
         } else {
-          setCart([...cart, { ...product, qty: 1 }]);
+          setCart([...cart, {...product, qty: 1}]);
         }
       };
 
@@ -58,7 +74,7 @@
         setCart(cart.map(item => {
           if (item.id === id) {
             const newQty = item.qty + delta;
-            return newQty > 0 ? { ...item, qty: newQty } : null;
+            return newQty > 0 ? {...item, qty: newQty} : null;
           }
           return item;
         }).filter(Boolean));
@@ -66,116 +82,183 @@
 
       const calculateTotal = () => {
         return cart.reduce((sum, item) => {
-          const currentPrice = item.qty >= 5 ? item.wholesalePrice : item.price;
-          return sum + (currentPrice * item.qty);
+          const activePrice = item.qty >= 5 ? item.wholesalePrice : item.price;
+          return sum + (activePrice * item.qty);
         }, 0);
       };
 
-      // Qidiruv va kategoriya bo'yicha saralash
-      const filteredProducts = products.filter(p => {
-        const matchesCategory = activeCategory === "all" || p.category === activeCategory;
-        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCategory && matchesSearch;
-      });
-
-      const sendToTelegram = (e) => {
+      const handleAddProduct = (e) => {
         e.preventDefault();
-        if (cart.length === 0) {
-          alert("Savatingiz bo'sh!");
+        if (!newName || !newPrice) {
+          alert("Meva nomi va narxini kiriting!");
           return;
         }
 
-        let message = "🛒 *YANGI BUYURTMA - MevaBozor*\n\n";
-        message += "👤 *Mijoz:* " + clientName + "\n";
-        message += "📞 *Tel:* " + clientPhone + "\n";
-        message += "📍 *Manzil:* " + clientAddress + "\n";
-        message += "⏰ *Vaqt:* " + deliveryTime + "\n";
-        message += "💳 *To'lov:* " + paymentMethod + "\n\n";
-        message += "📦 *Mahsulotlar:* \n";
+        const newProd = {
+          id: Date.now(),
+          name: newName,
+          price: Number(newPrice),
+          wholesalePrice: newWholesale ? Number(newWholesale) : Number(newPrice) - 3000,
+          unit: "kg",
+          image: newImage.trim() !== "" ? newImage : "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400"
+        };
+
+        setProducts([newProd, ...products]);
+        setNewName("");
+        setNewPrice("");
+        setNewWholesale("");
+        setNewImage("");
+        alert("Yangi mahsulot muvaffaqiyatli qo'shildi!");
+      };
+
+      const handleDeleteProduct = (id) => {
+        if (confirm("Haqiqatan ham o'chirmoqchimisiz?")) {
+          setProducts(products.filter(p => p.id !== id));
+        }
+      };
+
+      const submitOrder = (e) => {
+        e.preventDefault();
+        if (!clientName || !clientPhone || !clientAddress) {
+          alert("Barcha maydonlarni to'ldiring!");
+          return;
+        }
+
+        let orderText = "🛒 *YANGI BUYURTMA - MevaBozor*\n\n";
+        orderText += "👤 *Mijoz:* " + clientName + "\n";
+        orderText += "📞 *Tel:* " + clientPhone + "\n";
+        orderText += "📍 *Manzil:* " + clientAddress + "\n";
+        orderText += "💳 *To'lov turi:* " + paymentMethod + "\n\n";
+        orderText += "📦 *Buyurtmalar:* \n";
 
         cart.forEach((item, index) => {
-          const usedPrice = item.qty >= 5 ? item.wholesalePrice : item.price;
-          const isWholesale = item.qty >= 5 ? " (Optom 🔥)" : "";
-          message += (index + 1) + ". " + item.name + " - " + item.qty + " " + item.unit + " x " + usedPrice.toLocaleString() + " so'm" + isWholesale + "\n";
+          const price = item.qty >= 5 ? item.wholesalePrice : item.price;
+          const optomTag = item.qty >= 5 ? " (Optom 🔥)" : "";
+          orderText += (index + 1) + ". " + item.name + " - " + item.qty + " " + item.unit + " x " + price.toLocaleString() + " so'm" + optomTag + "\n";
         });
 
         const goodsTotal = calculateTotal();
-        message += "\n🚚 *Yetkazish:* " + deliveryFee.toLocaleString() + " so'm\n";
-        message += "💰 *JAMI:* " + (goodsTotal + deliveryFee).toLocaleString() + " so'm";
+        orderText += "\n🚚 *Yetkazish:* " + deliveryFee.toLocaleString() + " so'm\n";
+        orderText += "💰 *JAMI TO'LOV:* " + (goodsTotal + deliveryFee).toLocaleString() + " so'm";
 
-        const cleanUsername = telegramUsername.replace("@", "").trim();
-        const url = "https://t.me/" + cleanUsername + "?text=" + encodeURIComponent(message);
-        window.open(url, "_blank");
+        const cleanUsername = sellerTelegram.replace('@', '').trim();
+        const telegramUrl = "https://t.me/" + cleanUsername + "?text=" + encodeURIComponent(orderText);
+        window.open(telegramUrl, '_blank');
       };
 
       const goodsTotal = calculateTotal();
       const grandTotal = goodsTotal > 0 ? goodsTotal + deliveryFee : 0;
-      const totalItemsCount = cart.reduce((sum, item) => sum + item.qty, 0);
+      const totalItems = cart.reduce((a, c) => a + c.qty, 0);
 
       return (
         <div className="min-h-screen pb-24">
           {/* Header */}
           <header className="bg-emerald-600 text-white p-4 shadow-md sticky top-0 z-40 flex justify-between items-center max-w-md mx-auto">
-            <h1 className="text-lg font-bold">🍎 MevaBozor</h1>
-            <button 
-              onClick={() => setIsCartOpen(true)}
-              className="bg-emerald-700 text-xs px-3 py-2 rounded-lg border border-emerald-500 font-semibold flex items-center gap-1"
-            >
-              🛒 Savat ({totalItemsCount})
-            </button>
+            <h1 className="text-base font-bold">🍎 MevaBozor</h1>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setAdminView(!adminView)} 
+                className="bg-emerald-700 text-[11px] px-2.5 py-1.5 rounded-lg border border-emerald-500 font-semibold"
+              >
+                {adminView ? "🛒 Do'kon" : "⚙️ Admin"}
+              </button>
+              <button 
+                onClick={() => setIsCartOpen(true)}
+                className="bg-emerald-700 text-[11px] px-2.5 py-1.5 rounded-lg border border-emerald-500 font-semibold"
+              >
+                🛒 ({totalItems})
+              </button>
+            </div>
           </header>
 
-          <main className="max-w-md mx-auto p-4 space-y-3">
-            {/* Qidiruv paneli */}
-            <div>
-              <input 
-                type="text" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                placeholder="🔍 Qidirish (masalan: olma, bodring)..." 
-                className="w-full border p-2.5 rounded-xl text-xs bg-white shadow-sm"
-              />
-            </div>
-
-            {/* Kategoriyalar tugmalari */}
-            <div className="flex gap-2 overflow-x-auto pb-1 text-xs">
-              <button onClick={() => setActiveCategory("all")} className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap ${activeCategory === "all" ? "bg-emerald-600 text-white" : "bg-white border text-gray-700"}`}>Barchasi</button>
-              <button onClick={() => setActiveCategory("meva")} className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap ${activeCategory === "meva" ? "bg-emerald-600 text-white" : "bg-white border text-gray-700"}`}>🍏 Mevalar</button>
-              <button onClick={() => setActiveCategory("sabzavot")} className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap ${activeCategory === "sabzavot" ? "bg-emerald-600 text-white" : "bg-white border text-gray-700"}`}>🥕 Sabzavotlar</button>
-              <button onClick={() => setActiveCategory("quruq")} className={`px-3 py-1.5 rounded-lg font-bold whitespace-nowrap ${activeCategory === "quruq" ? "bg-emerald-600 text-white" : "bg-white border text-gray-700"}`}>🥜 Quruq mevalar</button>
-            </div>
-
-            <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-[11px] text-emerald-800">
-              🔥 <b>Optom chegirma:</b> Har qanday mahsulotdan 5 kg+ olsangiz avtomatik ulgurji narx ishlaydi!
-            </div>
-
-            {/* Mahsulotlar Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {filteredProducts.map(p => (
-                <div key={p.id} className="bg-white rounded-xl shadow-sm border p-3 flex flex-col justify-between">
-                  <div>
-                    <img src={p.image} alt={p.name} className="w-full h-24 object-cover rounded-lg mb-2" />
-                    <h3 className="font-bold text-xs text-gray-800 h-7 overflow-hidden">{p.name}</h3>
-                    <p className="text-[10px] text-gray-500 mb-1">{p.desc}</p>
-                    <p className="text-emerald-700 font-extrabold text-xs">{p.price.toLocaleString()} so'm /{p.unit}</p>
-                    <p className="text-amber-600 text-[10px] font-semibold">⚡ 5+ {p.unit}: {p.wholesalePrice.toLocaleString()} so'm</p>
-                  </div>
-                  <button 
-                    onClick={() => addToCart(p)}
-                    className="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition"
-                  >
-                    + Savatga
-                  </button>
+          <main className="max-w-md mx-auto p-4">
+            {adminView ? (
+              // Sotuvchi (Admin) paneli
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded-xl shadow border">
+                  <h2 className="text-sm font-bold mb-2 text-emerald-800">⚙️ Sotuvchi Sozlamalari</h2>
+                  <label className="text-[11px] text-gray-500 font-bold">Sizning Telegram Username'ingiz:</label>
+                  <input 
+                    type="text" 
+                    value={sellerTelegram} 
+                    onChange={(e) => setSellerTelegram(e.target.value)}
+                    className="w-full border p-2 rounded-lg text-xs mt-1"
+                    placeholder="Masalan: Alisher_Meva (@ siz)"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Buyurtmalar shu usernamega yuboriladi.</p>
                 </div>
-              ))}
-            </div>
+
+                <div className="bg-white p-4 rounded-xl shadow border">
+                  <h2 className="text-sm font-bold mb-3 text-emerald-800">➕ Yangi Meva Qo'shish</h2>
+                  <form onSubmit={handleAddProduct} className="space-y-2.5 text-xs">
+                    <input type="text" placeholder="Meva nomi (masalan: Shaftoli)" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full border p-2 rounded-lg" />
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="Chakana narx (so'm)" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="w-full border p-2 rounded-lg" />
+                      <input type="number" placeholder="Optom narx (5+ kg)" value={newWholesale} onChange={(e) => setNewWholesale(e.target.value)} className="w-full border p-2 rounded-lg" />
+                    </div>
+                    <input type="text" placeholder="Rasm URL havolasi (ixtiyoriy)" value={newImage} onChange={(e) => setNewImage(e.target.value)} className="w-full border p-2 rounded-lg text-xs" />
+                    <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold">Qo'shish</button>
+                  </form>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow border">
+                  <h2 className="text-sm font-bold mb-3 text-emerald-800">📋 Mavjud Mahsulotlar ({products.length} ta)</h2>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {products.map(p => (
+                      <div key={p.id} className="flex justify-between items-center py-1.5 border-b text-xs">
+                        <div>
+                          <p className="font-bold">{p.name}</p>
+                          <p className="text-emerald-600">{p.price.toLocaleString()} so'm</p>
+                        </div>
+                        <button onClick={() => handleDeleteProduct(p.id)} className="bg-red-100 text-red-600 px-2 py-1 rounded font-bold text-[10px]">O'chirish</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Xaridor ko'radigan asosiy oyna
+              <div>
+                {/* Banner / Aksiyalar */}
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4 rounded-2xl shadow-md mb-4">
+                  <h2 className="font-bold text-sm mb-1">🎁 Aksiya va Bonuslar</h2>
+                  <p className="text-xs opacity-90">Har qanday mevadan 5 kg va undan koʻp olsangiz — avtomatik <b>Optom chegirma</b> ishlaydi! Toshkent boʻylab tezkor yetkazish 🚚.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {products.map(p => (
+                    <div key={p.id} className="bg-white rounded-xl shadow-sm border p-3 flex flex-col justify-between">
+                      <div>
+                        <img src={p.image} alt={p.name} className="w-full h-24 object-cover rounded-lg mb-2" />
+                        <h3 className="font-bold text-xs text-gray-800 h-7 overflow-hidden">{p.name}</h3>
+                        <p className="text-emerald-700 font-extrabold text-xs mt-1">{p.price.toLocaleString()} so'm /{p.unit}</p>
+                        <p className="text-amber-600 text-[10px] font-semibold">🔥 5+ kg: {p.wholesalePrice.toLocaleString()} so'm</p>
+                      </div>
+                      <button 
+                        onClick={() => addToCart(p)}
+                        className="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-lg text-xs font-bold transition"
+                      >
+                        + Savatga
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Aloqa bo'limi */}
+                <div className="mt-6 bg-white p-4 rounded-xl shadow-sm border text-center text-xs space-y-1">
+                  <p className="font-bold text-emerald-800">📞 Savollar bo'yicha bog'lanish:</p>
+                  <p className="text-gray-600">Telefon: {sellerPhone}</p>
+                  <p className="text-gray-600">Telegram: @{sellerTelegram}</p>
+                </div>
+              </div>
+            )}
           </main>
 
-          {/* Pastdagi Savat Bar */}
-          {totalItemsCount > 0 && (
+          {/* Pastdagi Savat Paneli */}
+          {totalItems > 0 && !adminView && (
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-2xl max-w-md mx-auto z-40 flex justify-between items-center">
               <div>
-                <p className="text-xs text-gray-500">Jami ({totalItemsCount} ta):</p>
+                <p className="text-xs text-gray-500">Jami ({totalItems} ta):</p>
                 <p className="text-sm font-bold text-emerald-700">{grandTotal.toLocaleString()} so'm</p>
               </div>
               <button 
@@ -187,88 +270,62 @@
             </div>
           )}
 
-          {/* Savat Modal */}
+          {/* Savat va Buyurtma Oynasi */}
           {isCartOpen && (
             <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-xl max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-base font-bold text-emerald-800">🛒 Savatcha va Buyurtma</h3>
+                  <h3 className="text-base font-bold text-emerald-800">🛒 Savat va To'lov</h3>
                   <button onClick={() => setIsCartOpen(false)} className="text-gray-400 font-bold">✕</button>
                 </div>
 
-                {cart.length === 0 ? (
-                  <p className="text-center text-xs text-gray-500 py-6">Savatingiz bo'sh.</p>
-                ) : (
+                <div className="space-y-2 mb-4 border-b pb-3">
+                  {cart.map(item => {
+                    const price = item.qty >= 5 ? item.wholesalePrice : item.price;
+                    return (
+                      <div key={item.id} className="flex justify-between items-center text-xs">
+                        <div className="flex-1">
+                          <p className="font-bold">{item.name}</p>
+                          <p className="text-gray-500">
+                            {price.toLocaleString()} so'm 
+                            {item.qty >= 5 && <span className="text-amber-600 font-bold"> (Optom 🔥)</span>}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => updateQty(item.id, -1)} className="bg-gray-200 px-2 py-0.5 rounded font-bold">-</button>
+                          <span className="font-bold">{item.qty} {item.unit}</span>
+                          <button onClick={() => updateQty(item.id, 1)} className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <form onSubmit={submitOrder} className="space-y-2.5 text-xs">
+                  <input type="text" required value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Ismingiz" className="w-full border p-2 rounded-lg" />
+                  <input type="tel" required value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Telefon raqamingiz" className="w-full border p-2 rounded-lg" />
+                  <textarea required rows="2" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Yetkazish manzili" className="w-full border p-2 rounded-lg"></textarea>
+                  
                   <div>
-                    <div className="space-y-2 mb-4 border-b pb-3">
-                      {cart.map(item => {
-                        const currentPrice = item.qty >= 5 ? item.wholesalePrice : item.price;
-                        return (
-                          <div key={item.id} className="flex justify-between items-center text-xs">
-                            <div className="flex-1">
-                              <p className="font-bold">{item.name}</p>
-                              <p className="text-gray-500">
-                                {currentPrice.toLocaleString()} so'm 
-                                {item.qty >= 5 && <span className="text-amber-600 font-bold"> (Optom 🔥)</span>}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button onClick={() => updateQty(item.id, -1)} className="bg-gray-200 px-2 py-0.5 rounded font-bold">-</button>
-                              <span className="font-bold">{item.qty} {item.unit}</span>
-                              <button onClick={() => updateQty(item.id, 1)} className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">+</button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="mb-3 bg-amber-50 p-2 rounded-lg border border-amber-200">
-                      <label className="block text-[10px] font-bold text-amber-800 mb-1">Buyurtma keladigan Telegram username:</label>
-                      <input 
-                        type="text" 
-                        value={telegramUsername} 
-                        onChange={(e) => setTelegramUsername(e.target.value)}
-                        placeholder="masalan: Alisher_Meva" 
-                        className="w-full border p-1.5 rounded text-xs bg-white" 
-                      />
-                    </div>
-
-                    <form onSubmit={sendToTelegram} className="space-y-2 text-xs">
-                      <input type="text" required value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Ismingiz" className="w-full border p-2 rounded-lg" />
-                      <input type="tel" required value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Telefon raqamingiz" className="w-full border p-2 rounded-lg" />
-                      <textarea required rows="2" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Yetkazish manzili" className="w-full border p-2 rounded-lg"></textarea>
-                      
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-gray-500 font-bold">Yetkazish vaqti:</label>
-                        <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} className="w-full border p-2 rounded-lg bg-white">
-                          <option value="Tez orada (1-2 soatda)">Tez orada (1-2 soatda)</option>
-                          <option value="Bugun kechki payt">Bugun kechki payt</option>
-                          <option value="Ertalabki vaqtda">Ertalabki vaqtda</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[10px] text-gray-500 font-bold">To'lov turi:</label>
-                        <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full border p-2 rounded-lg bg-white">
-                          <option value="Naqd pul (Kuryerga)">Naqd pul (Kuryerga)</option>
-                          <option value="Click orqali">Click orqali</option>
-                          <option value="Payme orqali">Payme orqali</option>
-                        </select>
-                      </div>
-
-                      <div className="bg-emerald-50 p-2 rounded-lg text-emerald-900 text-xs font-semibold space-y-1">
-                        <div className="flex justify-between"><span>Mahsulotlar:</span><span>{goodsTotal.toLocaleString()} so'm</span></div>
-                        <div className="flex justify-between"><span>Yetkazish:</span><span>{deliveryFee.toLocaleString()} so'm</span></div>
-                        <div className="flex justify-between border-t pt-1 font-bold text-sm"><span>Jami:</span><span>{grandTotal.toLocaleString()} so'm</span></div>
-                      </div>
-
-                      <div className="flex gap-2 pt-2">
-                        <button type="button" onClick={() => setIsCartOpen(false)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl font-bold">Yopish</button>
-                        <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">Telegramga yuborish 🚀</button>
-                      </div>
-                    </form>
+                    <label className="text-[10px] text-gray-500 font-bold">To'lov turini tanlang:</label>
+                    <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full border p-2 rounded-lg bg-white mt-1">
+                      <option value="Naqd pul (Kuryerga)">Naqd pul (Kuryerga beraman)</option>
+                      <option value="Click orqali">Click orqali o'tkazaman</option>
+                      <option value="Payme orqali">Payme orqali o'tkazaman</option>
+                    </select>
                   </div>
-                )}
+
+                  <div className="bg-emerald-50 p-2 rounded-lg text-emerald-900 text-xs font-semibold space-y-1">
+                    <div className="flex justify-between"><span>Mahsulotlar:</span><span>{goodsTotal.toLocaleString()} so'm</span></div>
+                    <div className="flex justify-between"><span>Yetkazish:</span><span>{deliveryFee.toLocaleString()} so'm</span></div>
+                    <div className="flex justify-between border-t pt-1 font-bold text-sm"><span>Jami:</span><span>{grandTotal.toLocaleString()} so'm</span></div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setIsCartOpen(false)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl font-bold">Yopish</button>
+                    <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">Telegramga 🚀</button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
