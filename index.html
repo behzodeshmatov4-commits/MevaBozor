@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MevaBozor</title>
+  <title>MevaBozor - Onlayn Do'kon</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -13,13 +13,248 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     function App() {
+      const [sellerTelegram, setSellerTelegram] = useState(() => {
+        return localStorage.getItem('meva_telegram') || "SizningTelegram";
+      });
+
+      const [products, setProducts] = useState(() => {
+        const saved = localStorage.getItem('meva_bozor_products');
+        if (saved) {
+          try { return JSON.parse(saved); } catch(e) {}
+        }
+        return [
+          { id: 1, name: "Qizil Olma (Fuji)", price: 18000, wholesalePrice: 15000, unit: "kg", image: "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400" },
+          { id: 2, name: "Shirin Banan", price: 24000, wholesalePrice: 21000, unit: "kg", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400" },
+          { id: 3, name: "Qora Kishmish Uzum", price: 35000, wholesalePrice: 30000, unit: "kg", image: "https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400" },
+          { id: 4, name: "Qirollik Mango", price: 65000, wholesalePrice: 58000, unit: "kg", image: "https://images.unsplash.com/photo-1553279768-865429fa0078?w=400" }
+        ];
+      });
+
+      const [cart, setCart] = useState([]);
+      const [adminView, setAdminView] = useState(false);
+      const [deliveryFee, setDeliveryFee] = useState(15000);
+
+      const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+      const [clientName, setClientName] = useState("");
+      const [clientPhone, setClientPhone] = useState("");
+      const [clientAddress, setClientAddress] = useState("");
+      const [paymentMethod, setPaymentMethod] = useState("Naqd pul");
+
+      const [newName, setNewName] = useState("");
+      const [newPrice, setNewPrice] = useState("");
+      const [newWholesale, setNewWholesale] = useState("");
+      const [newUnit, setNewUnit] = useState("kg");
+      const [newImage, setNewImage] = useState("");
+
+      useEffect(() => {
+        localStorage.setItem('meva_bozor_products', JSON.stringify(products));
+      }, [products]);
+
+      useEffect(() => {
+        localStorage.setItem('meva_telegram', sellerTelegram);
+      }, [sellerTelegram]);
+
+      const addToCart = (product) => {
+        const existing = cart.find(item => item.id === product.id);
+        if (existing) {
+          setCart(cart.map(item => item.id === product.id ? {...item, qty: item.qty + 1} : item));
+        } else {
+          setCart([...cart, {...product, qty: 1}]);
+        }
+      };
+
+      const totalPrice = cart.reduce((sum, item) => {
+        const activePrice = item.qty >= 5 ? item.wholesalePrice : item.price;
+        return sum + (activePrice * item.qty);
+      }, 0);
+
+      const handleAddProduct = (e) => {
+        e.preventDefault();
+        if (!newName || !newPrice) {
+          alert("Meva nomi va narxini kiriting!");
+          return;
+        }
+
+        const newProd = {
+          id: Date.now(),
+          name: newName,
+          price: Number(newPrice),
+          wholesalePrice: newWholesale ? Number(newWholesale) : Number(newPrice) - 3000,
+          unit: newUnit,
+          image: newImage.trim() !== "" ? newImage : "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400"
+        };
+
+        setProducts([newProd, ...products]);
+        setNewName("");
+        setNewPrice("");
+        setNewWholesale("");
+        setNewImage("");
+        alert("Meva qo'shildi!");
+      };
+
+      const handleDeleteProduct = (id) => {
+        if (confirm("O'chirilsinmi?")) {
+          setProducts(products.filter(p => p.id !== id));
+        }
+      };
+
+      const submitOrder = (e) => {
+        e.preventDefault();
+        if (!clientName || !clientPhone || !clientAddress) {
+          alert("Barcha ma'lumotlarni to'ldiring!");
+          return;
+        }
+
+        let orderText = "YANGI BUYURTMA - MevaBozor\n";
+        orderText += "Mijoz: " + clientName + "\n";
+        orderText += "Tel: " + clientPhone + "\n";
+        orderText += "Manzil: " + clientAddress + "\n";
+        orderText += "To'lov: " + paymentMethod + "\n\n";
+        orderText += "Mahsulotlar:\n";
+
+        cart.forEach((item, index) => {
+          const price = item.qty >= 5 ? item.wholesalePrice : item.price;
+          orderText += (index + 1) + ". " + item.name + " - " + item.qty + " " + item.unit + " x " + price + " so'm\n";
+        });
+
+        orderText += "\nYetkazish: " + deliveryFee + " so'm\n";
+        orderText += "JAMI: " + (totalPrice + deliveryFee) + " so'm";
+
+        const cleanUsername = sellerTelegram.replace('@', '').trim();
+        const telegramUrl = "https://t.me/" + cleanUsername + "?text=" + encodeURIComponent(orderText);
+        window.open(telegramUrl, '_blank');
+      };
+
       return (
-        <div className="p-8 text-center max-w-md mx-auto">
-          <h1 className="text-2xl font-bold text-emerald-600 mb-2">🍎 MevaBozor Ishlayapti!</h1>
-          <p className="text-gray-600 text-sm">Saytingiz muvaffaqiyatli ishga tushdi.</p>
+        <div className="min-h-screen pb-24">
+          <header className="bg-emerald-600 text-white p-4 shadow-md sticky top-0 z-40 flex justify-between items-center">
+            <h1 className="text-lg font-bold">🍎 MevaBozor</h1>
+            <button 
+              onClick={() => setAdminView(!adminView)} 
+              className="bg-emerald-700 text-xs px-3 py-2 rounded-lg border border-emerald-500 font-semibold"
+            >
+              {adminView ? "🛒 Do'kon" : "⚙️ Sotuvchi paneli"}
+            </button>
+          </header>
+
+          <main className="max-w-md mx-auto p-4">
+            {adminView ? (
+              <div className="space-y-6">
+                <div className="bg-white p-4 rounded-xl shadow border">
+                  <h2 className="text-sm font-bold mb-2 text-emerald-800">📱 Telegram Username</h2>
+                  <input 
+                    type="text" 
+                    value={sellerTelegram} 
+                    onChange={(e) => setSellerTelegram(e.target.value)}
+                    className="w-full border p-2 rounded-lg text-sm"
+                    placeholder="Masalan: Alisher_Meva (@ siz)"
+                  />
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow border">
+                  <h2 className="text-sm font-bold mb-3 text-emerald-800">➕ Yangi Meva Qo'shish</h2>
+                  <form onSubmit={handleAddProduct} className="space-y-3 text-sm">
+                    <div>
+                      <input type="text" placeholder="Meva nomi" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full border p-2 rounded-lg text-sm" />
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="Chakana narx" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="w-full border p-2 rounded-lg text-sm" />
+                      <input type="number" placeholder="Optom narx" value={newWholesale} onChange={(e) => setNewWholesale(e.target.value)} className="w-full border p-2 rounded-lg text-sm" />
+                    </div>
+                    <div className="flex gap-2">
+                      <input type="text" placeholder="Rasm URL havolasi (ixtiyoriy)" value={newImage} onChange={(e) => setNewImage(e.target.value)} className="w-full border p-2 rounded-lg text-xs" />
+                      <select value={newUnit} onChange={(e) => setNewUnit(e.target.value)} className="border p-2 rounded-lg bg-white text-sm">
+                        <option value="kg">kg</option>
+                        <option value="dona">dona</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-sm">Qo'shish</button>
+                  </form>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow border">
+                  <h2 className="text-sm font-bold mb-3 text-emerald-800">📋 Mevalar ({products.length} ta)</h2>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {products.map(p => (
+                      <div key={p.id} className="flex justify-between items-center py-2 border-b text-xs gap-2">
+                        <div className="flex-1 truncate">
+                          <p className="font-bold">{p.name}</p>
+                          <p className="text-emerald-600">{p.price} so'm</p>
+                        </div>
+                        <button onClick={() => handleDeleteProduct(p.id)} className="bg-red-100 text-red-600 px-2 py-1 rounded font-bold">O'chirish</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl mb-4 text-xs text-emerald-800 flex justify-between items-center">
+                  <span>🚚 Yetkazib berish:</span>
+                  <span className="font-bold">{deliveryFee.toLocaleString()} so'm</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {products.map(p => (
+                    <div key={p.id} className="bg-white rounded-xl shadow-sm border p-3 flex flex-col justify-between">
+                      <img src={p.image} alt={p.name} className="w-full h-24 object-cover rounded-lg mb-2" />
+                      <div>
+                        <h3 className="font-bold text-xs text-gray-800 h-7 overflow-hidden">{p.name}</h3>
+                        <p className="text-emerald-700 font-extrabold text-xs mt-1">{p.price.toLocaleString()} so'm /{p.unit}</p>
+                        <p className="text-amber-600 text-[10px]">🔥 Optom (5+ {p.unit}): {p.wholesalePrice.toLocaleString()} so'm</p>
+                      </div>
+                      <button 
+                        onClick={() => addToCart(p)}
+                        className="mt-2 w-full bg-emerald-600 text-white py-1.5 rounded-lg text-xs font-bold"
+                      >
+                        + Savatga
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {!adminView && cart.length > 0 && (
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-3 shadow-2xl max-w-md mx-auto z-50 flex justify-between items-center">
+              <div>
+                <p className="text-xs text-gray-500">Savat ({cart.reduce((a,c)=>a+c.qty,0)} ta):</p>
+                <p className="text-sm font-bold text-emerald-700">{(totalPrice + deliveryFee).toLocaleString()} so'm</p>
+              </div>
+              <button 
+                onClick={() => setIsCheckoutOpen(true)}
+                className="bg-emerald-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow"
+              >
+                Buyurtma berish
+              </button>
+            </div>
+          )}
+
+          {isCheckoutOpen && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-2xl p-5 max-w-sm w-full shadow-xl">
+                <h3 className="text-base font-bold text-emerald-800 mb-3">📝 Buyurtma Berish</h3>
+                <form onSubmit={submitOrder} className="space-y-3 text-xs">
+                  <input type="text" required value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Ismingiz" className="w-full border p-2 rounded-lg text-sm" />
+                  <input type="tel" required value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Telefon raqamingiz" className="w-full border p-2 rounded-lg text-sm" />
+                  <textarea required rows="2" value={clientAddress} onChange={(e) => setClientAddress(e.target.value)} placeholder="Manzilingiz" className="w-full border p-2 rounded-lg text-sm"></textarea>
+                  <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full border p-2 rounded-lg bg-white text-sm">
+                    <option value="Naqd pul">Naqd pul (Kuryerga)</option>
+                    <option value="Click">Click orqali</option>
+                    <option value="Payme">Payme orqali</option>
+                  </select>
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setIsCheckoutOpen(false)} className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-xl font-bold">Yopish</button>
+                    <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded-xl font-bold">Telegramga 🚀</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
